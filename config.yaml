@@ -1,0 +1,14 @@
+# API配置
+api_url: "http://127.0.0.1:1234/v1/chat/completions"
+model_name: "your-model-name"
+timeout: 20
+
+# 模型参数
+temperature: 0.1
+max_tokens: 500
+
+# 文件路径
+questions_file: "questions.xlsx"
+
+# 运行参数
+sleep_interval: 5
