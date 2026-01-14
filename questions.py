@@ -15,9 +15,6 @@ def load_config(config_file: str = "config.yaml") -> dict:
         print(f"❌ 无法读取配置文件 {config_file}: {e}")
         exit(1)
 
-# 加载配置
-config = load_config()
-
 def load_questions(file_path: str) -> tuple:
     """从Excel文件加载测试问题和答案"""
     try:
@@ -32,7 +29,7 @@ def load_questions(file_path: str) -> tuple:
 # ======================
 # 核心函数
 # ======================
-def ask_model(question: str) -> dict:
+def ask_model(question: str, config: dict) -> dict:
     """调用本地模型 API"""
     payload = {
         "model": config["model_name"],
@@ -126,7 +123,7 @@ def update_questions_file(file_path: str, results: list, similarities: list):
     except Exception as e:
         print(f"❌ 回写答案失败: {e}")
 
-def generate_excel_report(results: list, questions: list):
+def generate_excel_report(results: list, questions: list, config: dict):
     total = len(results)
     success_count = sum(1 for r in results if r["success"])
     avg_latency = round(sum(r["latency"] for r in results) / total, 2)
@@ -182,54 +179,65 @@ def generate_excel_report(results: list, questions: list):
     print(f"\n✅ 测试完成！Excel报告已保存至: {excel_path}")
     return excel_path
 
+def run_test(config: dict) -> str:
+    """执行测试并返回报告路径"""
+    try:
+        # 加载测试问题和答案
+        questions, reference_answers = load_questions(config["questions_file"])
+        if not questions:
+            print("❌ 未找到有效的测试问题")
+            return None
+        
+        print(f"🚀 开始自动化测试，共 {len(questions)} 个问题...")
+        results = []
+        
+        for i, question in enumerate(questions, 1):
+            # 跳过空问题
+            if not question or pd.isna(question) or str(question).strip() == "":
+                print(f"[{i}/{len(questions)}] 跳过空问题")
+                results.append({
+                    "question": "",
+                    "answer": "",
+                    "success": False,
+                    "error": "问题为空",
+                    "latency": 0
+                })
+                continue
+                
+            print(f"[{i}/{len(questions)}] 提问: {question}")
+            result = ask_model(question, config)
+            results.append({
+                "question": question,
+                "answer": result["answer"],
+                "success": result["success"],
+                "error": result["error"],
+                "latency": result["latency"]
+            })
+            time.sleep(config["sleep_interval"])
+        
+        # 计算相似度
+        model_answers = [r["answer"] for r in results]
+        similarities = calculate_similarity(model_answers, reference_answers)
+        
+        # 回写答案和相似度到问题文件
+        update_questions_file(config["questions_file"], results, similarities)
+        
+        # 生成Excel报告
+        excel_file = generate_excel_report(results, questions, config)
+        
+        # 打印汇总信息
+        total = len(results)
+        success_count = sum(1 for r in results if r["success"])
+        print(f"\n📊 测试汇总: 成功 {success_count}/{total}, 平均延迟 {sum(r['latency'] for r in results)/total:.2f}s")
+        
+        return excel_file
+    except Exception as e:
+        print(f"❌ 测试执行失败: {e}")
+        return None
+
 # ======================
 # 主程序
 # ======================
 if __name__ == "__main__":
-    # 加载测试问题和答案
-    questions, reference_answers = load_questions(config["questions_file"])
-    if not questions:
-        print("❌ 未找到有效的测试问题，程序退出")
-        exit(1)
-    
-    print(f"🚀 开始自动化测试，共 {len(questions)} 个问题...")
-    results = []
-    
-    for i, question in enumerate(questions, 1):
-        # 跳过空问题
-        if not question or pd.isna(question) or str(question).strip() == "":
-            print(f"[{i}/{len(questions)}] 跳过空问题")
-            results.append({
-                "question": "",
-                "answer": "",
-                "success": False,
-                "error": "问题为空",
-                "latency": 0
-            })
-            continue
-            
-        print(f"[{i}/{len(questions)}] 提问: {question}")
-        result = ask_model(question)
-        results.append({
-            "question": question,
-            "answer": result["answer"],
-            "success": result["success"],
-            "error": result["error"],
-            "latency": result["latency"]
-        })
-        time.sleep(config["sleep_interval"])
-    
-    # 计算相似度
-    model_answers = [r["answer"] for r in results]
-    similarities = calculate_similarity(model_answers, reference_answers)
-    
-    # 回写答案和相似度到问题文件
-    update_questions_file(config["questions_file"], results, similarities)
-    
-    # 生成Excel报告
-    excel_file = generate_excel_report(results, questions)
-    
-    # 打印汇总信息
-    total = len(results)
-    success_count = sum(1 for r in results if r["success"])
-    print(f"\n📊 测试汇总: 成功 {success_count}/{total}, 平均延迟 {sum(r['latency'] for r in results)/total:.2f}s")
+    config = load_config()
+    run_test(config)
