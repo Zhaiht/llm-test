@@ -21,7 +21,7 @@ def index():
     try:
         return render_template('config_form.html')
     except Exception as e:
-        logger.error(f"加载首页失败: {e}", exc_info=True)
+        logger.error(f"加载失败: {e}", exc_info=True)
         return str(e), 500
 
 @app.route('/run_test', methods=['POST'])
