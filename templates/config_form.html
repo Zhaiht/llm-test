@@ -100,6 +100,7 @@
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s;
+            position: relative;
         }
         
         button:hover:not(:disabled) {
@@ -110,6 +111,24 @@
         button:disabled {
             background: #d9d9d9;
             cursor: not-allowed;
+            color: #8c8c8c;
+        }
+        
+        button.loading::before {
+            content: '';
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            margin-right: 8px;
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
         
         .stats {
@@ -412,6 +431,7 @@
             output.innerHTML = '';
             statsContainer.style.display = 'block';
             startBtn.disabled = true;
+            startBtn.classList.add('loading');
             startBtn.textContent = '测试中...';
             
             stats = { total: 0, current: 0, success: 0, failed: 0 };
@@ -461,12 +481,14 @@
                     addLog(`✅ 测试完成！成功 ${data.success_count}/${data.total}`, 'complete');
                     addLog(`<a href="/download/${data.report_path}">📥 点击下载测试报告</a>`, 'complete');
                     startBtn.disabled = false;
+                    startBtn.classList.remove('loading');
                     startBtn.textContent = '开始测试';
                     eventSource.close();
                 }
                 else if (data.type === 'error') {
                     addLog(`❌ 错误: ${data.message}`, 'error');
                     startBtn.disabled = false;
+                    startBtn.classList.remove('loading');
                     startBtn.textContent = '开始测试';
                     eventSource.close();
                 }
@@ -475,6 +497,7 @@
             eventSource.addEventListener('error', () => {
                 addLog('❌ 连接中断', 'error');
                 startBtn.disabled = false;
+                startBtn.classList.remove('loading');
                 startBtn.textContent = '开始测试';
                 eventSource.close();
             });
