@@ -188,6 +188,36 @@
             background: #f6ffed;
             border-color: #52c41a;
             color: #389e0d;
+            position: relative;
+        }
+        
+        .answer-text {
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: help;
+            max-width: 100%;
+        }
+        
+        .tooltip {
+            position: fixed;
+            background: #fff;
+            border: 1px solid #52c41a;
+            border-radius: 6px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #262626;
+            font-size: 13px;
+            line-height: 1.6;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            pointer-events: none;
+            display: none;
         }
         
         .log-error {
@@ -293,12 +323,80 @@
         const statsContainer = document.getElementById('statsContainer');
         
         let stats = { total: 0, current: 0, success: 0, failed: 0 };
+        let tooltip = null;
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function createTooltip() {
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                document.body.appendChild(tooltip);
+            }
+            return tooltip;
+        }
+
+        function showTooltip(element, text) {
+            const tip = createTooltip();
+            tip.textContent = text;
+            tip.style.display = 'block';
+            
+            const rect = element.getBoundingClientRect();
+            const tipRect = tip.getBoundingClientRect();
+            
+            // 计算最佳位置
+            let left = rect.left;
+            let top = rect.bottom + 8;
+            
+            // 如果右侧超出屏幕，向左对齐
+            if (left + tipRect.width > window.innerWidth - 20) {
+                left = window.innerWidth - tipRect.width - 20;
+            }
+            
+            // 如果左侧超出屏幕，从左边开始
+            if (left < 20) {
+                left = 20;
+            }
+            
+            // 如果底部超出屏幕，显示在元素上方
+            if (top + tipRect.height > window.innerHeight - 20) {
+                top = rect.top - tipRect.height - 8;
+            }
+            
+            // 如果上方也放不下，固定在可见区域内
+            if (top < 20) {
+                top = 20;
+            }
+            
+            tip.style.left = left + 'px';
+            tip.style.top = top + 'px';
+        }
+
+        function hideTooltip() {
+            if (tooltip) {
+                tooltip.style.display = 'none';
+            }
+        }
 
         function addLog(message, type) {
             const div = document.createElement('div');
             div.className = `log-item log-${type}`;
             div.innerHTML = message;
             output.appendChild(div);
+            
+            // 为答案文本添加悬浮事件
+            const answerTexts = div.querySelectorAll('.answer-text');
+            answerTexts.forEach(el => {
+                el.addEventListener('mouseenter', function() {
+                    showTooltip(this, this.getAttribute('data-full-text'));
+                });
+                el.addEventListener('mouseleave', hideTooltip);
+            });
+            
             output.scrollTop = output.scrollHeight;
         }
 
@@ -338,8 +436,15 @@
                 else if (data.type === 'answer') {
                     if (data.success) {
                         stats.success++;
-                        const preview = data.answer.substring(0, 100) + (data.answer.length > 100 ? '...' : '');
-                        addLog(`✓ 回答成功 (${data.latency}s): ${preview}`, 'answer');
+                        const fullAnswer = data.answer;
+                        const preview = fullAnswer.substring(0, 50);
+                        const needsTruncate = fullAnswer.length > 50;
+                        
+                        const answerHtml = needsTruncate 
+                            ? `✓ 回答成功 (${data.latency}s):<br><span class="answer-text" data-full-text="${escapeHtml(fullAnswer)}" title="鼠标悬浮查看完整答案">${escapeHtml(preview)}...</span>`
+                            : `✓ 回答成功 (${data.latency}s):<br>${escapeHtml(fullAnswer)}`;
+                        
+                        addLog(answerHtml, 'answer');
                     } else {
                         stats.failed++;
                         addLog(`✗ 回答失败: ${data.error}`, 'error');
