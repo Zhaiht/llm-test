@@ -58,23 +58,62 @@
             font-size: 14px;
         }
         
-        input {
+        input[type="text"],
+        input[type="number"],
+        textarea {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid #d9d9d9;
             border-radius: 6px;
             font-size: 14px;
             transition: all 0.3s;
+            font-family: inherit;
         }
         
-        input:hover {
+        input[type="text"]:hover,
+        input[type="number"]:hover,
+        textarea:hover {
             border-color: #40a9ff;
         }
         
-        input:focus {
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
             outline: none;
             border-color: #1890ff;
             box-shadow: 0 0 0 2px rgba(24,144,255,0.2);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 24px;
+        }
+        
+        .radio-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: normal;
+        }
+        
+        .radio-label input[type="radio"] {
+            width: auto;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        
+        .radio-label span {
+            color: #595959;
+        }
+        
+        .radio-label input[type="radio"]:checked + span {
+            color: #1890ff;
+            font-weight: 500;
         }
         
         .hint {
@@ -305,8 +344,25 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label>提问方式</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="question_mode" value="file" checked>
+                            <span>从文件读取</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="question_mode" value="input">
+                            <span>手动输入</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group" id="fileInputGroup">
                     <label>问题文件路径</label>
-                    <input type="text" name="questions_file" value="questions.xlsx" required>
+                    <input type="text" name="questions_file" value="questions.xlsx">
+                </div>
+                <div class="form-group" id="manualInputGroup" style="display: none;">
+                    <label>输入问题（每行一个问题）</label>
+                    <textarea name="questions_text" rows="6" placeholder="请输入问题，每行一个问题&#10;例如：&#10;什么是人工智能？&#10;如何学习编程？"></textarea>
                 </div>
                 <button type="submit" id="startBtn">开始测试</button>
             </form>
@@ -340,9 +396,29 @@
         const output = document.getElementById('output');
         const startBtn = document.getElementById('startBtn');
         const statsContainer = document.getElementById('statsContainer');
+        const fileInputGroup = document.getElementById('fileInputGroup');
+        const manualInputGroup = document.getElementById('manualInputGroup');
+        const questionModeRadios = document.querySelectorAll('input[name="question_mode"]');
         
         let stats = { total: 0, current: 0, success: 0, failed: 0 };
         let tooltip = null;
+
+        // 切换提问方式
+        questionModeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'file') {
+                    fileInputGroup.style.display = 'block';
+                    manualInputGroup.style.display = 'none';
+                    form.questions_file.required = true;
+                    form.questions_text.required = false;
+                } else {
+                    fileInputGroup.style.display = 'none';
+                    manualInputGroup.style.display = 'block';
+                    form.questions_file.required = false;
+                    form.questions_text.required = true;
+                }
+            });
+        });
 
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -427,6 +503,17 @@
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
+            
+            // 验证输入
+            const questionMode = form.question_mode.value;
+            if (questionMode === 'file' && !form.questions_file.value.trim()) {
+                alert('请输入问题文件路径');
+                return;
+            }
+            if (questionMode === 'input' && !form.questions_text.value.trim()) {
+                alert('请输入至少一个问题');
+                return;
+            }
             
             output.innerHTML = '';
             statsContainer.style.display = 'block';

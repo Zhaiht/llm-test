@@ -49,10 +49,11 @@ def stream():
     config['max_tokens'] = int(config['max_tokens'])
     config['timeout'] = int(config['timeout'])
     config['sleep_interval'] = float(config['sleep_interval'])
+    config['question_mode'] = config.get('question_mode', 'file')
     
     def generate():
         try:
-            logger.info(f"开始流式测试: {config['questions_file']}")
+            logger.info(f"开始流式测试，模式: {config['question_mode']}")
             for event in run_test_stream(config):
                 yield f"data: {json.dumps(event)}\n\n"
         except Exception as e:

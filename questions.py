@@ -10,16 +10,27 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def load_questions(file_path: str) -> tuple:
-    """从Excel文件加载测试问题和答案"""
+def load_questions(file_path: str = None, text_input: str = None) -> tuple:
+    """从Excel文件或文本输入加载测试问题和答案"""
     try:
-        df = pd.read_excel(file_path)
-        questions = df['问题'].tolist()
-        answers = df['答案'].tolist() if '答案' in df.columns else [None] * len(questions)
-        logger.info(f"加载问题文件成功: {file_path}, 共 {len(questions)} 个问题")
-        return questions, answers
+        if text_input:
+            # 从文本输入加载问题
+            questions = [q.strip() for q in text_input.strip().split('\n') if q.strip()]
+            answers = [None] * len(questions)
+            logger.info(f"从文本输入加载问题成功，共 {len(questions)} 个问题")
+            return questions, answers
+        elif file_path:
+            # 从Excel文件加载问题
+            df = pd.read_excel(file_path)
+            questions = df['问题'].tolist()
+            answers = df['答案'].tolist() if '答案' in df.columns else [None] * len(questions)
+            logger.info(f"加载问题文件成功: {file_path}, 共 {len(questions)} 个问题")
+            return questions, answers
+        else:
+            logger.error("未提供问题来源")
+            return [], []
     except Exception as e:
-        logger.error(f"无法读取问题文件 {file_path}: {e}", exc_info=True)
+        logger.error(f"加载问题失败: {e}", exc_info=True)
         return [], []
 
 def ask_model(question: str, config: dict) -> dict:
@@ -83,7 +94,10 @@ def calculate_similarity(model_answers: list, reference_answers: list) -> list:
     return similarities
 
 def update_questions_file(file_path: str, results: list, similarities: list):
-    """将答案和相似度回写到问题Excel文件"""
+    """将答案和相似度回写到问题Excel文件（仅文件模式）"""
+    if not file_path:
+        logger.info("手动输入模式，跳过回写问题文件")
+        return
     try:
         df = pd.read_excel(file_path)
         df['回答'] = [r["answer"] for r in results]
@@ -150,7 +164,13 @@ def generate_excel_report(results: list, questions: list, config: dict):
 def run_test_stream(config: dict):
     """执行测试并实时流式输出进度"""
     try:
-        questions, reference_answers = load_questions(config["questions_file"])
+        question_mode = config.get("question_mode", "file")
+        
+        if question_mode == "input":
+            questions, reference_answers = load_questions(text_input=config.get("questions_text", ""))
+        else:
+            questions, reference_answers = load_questions(file_path=config.get("questions_file"))
+        
         if not questions:
             yield {"type": "error", "message": "未找到有效的测试问题"}
             return
@@ -177,7 +197,11 @@ def run_test_stream(config: dict):
             time.sleep(config["sleep_interval"])
         
         similarities = calculate_similarity([r["answer"] for r in results], reference_answers)
-        update_questions_file(config["questions_file"], results, similarities)
+        
+        # 仅在文件模式下回写
+        if question_mode == "file":
+            update_questions_file(config.get("questions_file"), results, similarities)
+        
         excel_file = generate_excel_report(results, questions, config)
         
         success_count = sum(1 for r in results if r["success"])
@@ -190,7 +214,13 @@ def run_test_stream(config: dict):
 def run_test(config: dict) -> str:
     """执行测试并返回报告路径"""
     try:
-        questions, reference_answers = load_questions(config["questions_file"])
+        question_mode = config.get("question_mode", "file")
+        
+        if question_mode == "input":
+            questions, reference_answers = load_questions(text_input=config.get("questions_text", ""))
+        else:
+            questions, reference_answers = load_questions(file_path=config.get("questions_file"))
+        
         if not questions:
             return None
         
@@ -213,7 +243,11 @@ def run_test(config: dict) -> str:
             time.sleep(config["sleep_interval"])
         
         similarities = calculate_similarity([r["answer"] for r in results], reference_answers)
-        update_questions_file(config["questions_file"], results, similarities)
+        
+        # 仅在文件模式下回写
+        if question_mode == "file":
+            update_questions_file(config.get("questions_file"), results, similarities)
+        
         excel_file = generate_excel_report(results, questions, config)
         
         success_count = sum(1 for r in results if r["success"])
