@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}压力测试 - LLM 测试工具{% endblock %}
+
+{% block content %}
+<div class="panel">
+    <div class="panel-title">
+        <span style="font-size: 24px;">⚡</span>
+        <h2>压力测试配置</h2>
+    </div>
+    <form id="stressForm">
+        <div class="form-group">
+            <label>目标API地址</label>
+            <input type="text" name="target_url" value="http://localhost:1234" required>
+            <div class="hint">要压测的服务器地址</div>
+        </div>
+        <div class="form-group">
+            <label>测试接口</label>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="test_endpoint" value="models" checked>
+                    <span>/v1/models</span>
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="test_endpoint" value="chat">
+                    <span>/v1/chat/completions</span>
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="test_endpoint" value="both">
+                    <span>混合测试</span>
+                </label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label>并发用户数</label>
+                <input type="number" name="users" value="10" min="1" required>
+                <div class="hint">同时发起请求的用户数</div>
+            </div>
+            <div class="form-group">
+                <label>启动速率 (用户/秒)</label>
+                <input type="number" name="spawn_rate" value="2" min="1" required>
+                <div class="hint">每秒启动的用户数</div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label>运行时长 (秒)</label>
+                <input type="number" name="duration" value="60" min="1" required>
+                <div class="hint">压测持续时间</div>
+            </div>
+            <div class="form-group">
+                <label>请求间隔 (秒)</label>
+                <input type="number" name="wait_time" value="1" min="0.1" step="0.1" required>
+                <div class="hint">每个请求之间的等待时间</div>
+            </div>
+        </div>
+        <div class="form-group" id="chatConfigGroup" style="display: none;">
+            <label>聊天模型名称</label>
+            <input type="text" name="model_name" value="local-model">
+        </div>
+        <button type="submit" id="stressBtn">开始压测</button>
+    </form>
+</div>
+
+<div class="panel result-panel">
+    <div class="panel-title">
+        <span style="font-size: 24px;">📈</span>
+        <h2>压测结果</h2>
+    </div>
+    <div id="stressStatsContainer" style="display: none;">
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="stressRPS">0</div>
+                <div class="stat-label">RPS (请求/秒)</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-value" id="stressSuccess">0</div>
+                <div class="stat-label">成功请求</div>
+            </div>
+            <div class="stat-card failed">
+                <div class="stat-value" id="stressFailed">0</div>
+                <div class="stat-label">失败请求</div>
+            </div>
+        </div>
+    </div>
+    <div class="output" id="stressOutput">
+        <div class="empty">配置参数后开始压测...</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const stressForm = document.getElementById('stressForm');
+    const stressOutput = document.getElementById('stressOutput');
+    const stressBtn = document.getElementById('stressBtn');
+    const stressStatsContainer = document.getElementById('stressStatsContainer');
+    const chatConfigGroup = document.getElementById('chatConfigGroup');
+    const testEndpointRadios = document.querySelectorAll('input[name="test_endpoint"]');
+    
+    testEndpointRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            chatConfigGroup.style.display = (e.target.value === 'chat' || e.target.value === 'both') ? 'block' : 'none';
+        });
+    });
+
+    function addStressLog(message, type) {
+        const div = document.createElement('div');
+        div.className = `log-item log-${type}`;
+        div.textContent = message;
+        stressOutput.appendChild(div);
+        stressOutput.scrollTop = stressOutput.scrollHeight;
+    }
+
+    stressForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        console.log('表单提交事件触发');
+        
+        stressOutput.innerHTML = '';
+        stressStatsContainer.style.display = 'block';
+        stressBtn.disabled = true;
+        stressBtn.classList.add('loading');
+        stressBtn.textContent = '压测中...';
+        
+        const formData = new FormData(stressForm);
+        const params = new URLSearchParams(formData).toString();
+        
+        console.log('请求参数:', params);
+        
+        addStressLog('正在启动压力测试...', 'start');
+        addStressLog('提示：首次运行可能需要较长时间，请耐心等待', 'question');
+        
+        const url = `/stress_test?${params}`;
+        console.log('请求URL:', url);
+        
+        fetch(url)
+            .then(response => {
+                console.log('收到响应:', response.status);
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || '请求失败');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('响应数据:', data);
+                if (data.status === 'success') {
+                    addStressLog(`✅ 压测完成！`, 'complete');
+                    addStressLog(`总请求数: ${data.total_requests}`, 'answer');
+                    addStressLog(`成功: ${data.success_count}, 失败: ${data.failed_count}`, 'answer');
+                    addStressLog(`平均RPS: ${data.avg_rps}`, 'answer');
+                    addStressLog(`平均响应时间: ${data.avg_response_time}ms`, 'answer');
+                    addStressLog(`📄 详细报告已生成: reports/locust_report.html`, 'complete');
+                    document.getElementById('stressRPS').textContent = data.avg_rps;
+                    document.getElementById('stressSuccess').textContent = data.success_count;
+                    document.getElementById('stressFailed').textContent = data.failed_count;
+                } else {
+                    addStressLog(`❌ 错误: ${data.message}`, 'error');
+                    if (data.message.includes('Locust未安装')) {
+                        addStressLog('💡 解决方法：在终端运行 pip install locust', 'question');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('请求错误:', error);
+                addStressLog(`❌ 压测失败: ${error.message}`, 'error');
+                addStressLog('💡 请检查：', 'question');
+                
+                if (error.message.includes('依赖包缺失') || error.message.includes('ModuleNotFoundError')) {
+                    addStressLog('1. 安装完整依赖：pip install locust zope.event', 'question');
+                    addStressLog('2. 或者重新安装：pip uninstall locust && pip install locust', 'question');
+                } else {
+                    addStressLog('1. Locust是否已安装 (pip install locust)', 'question');
+                    addStressLog('2. 目标服务是否正在运行', 'question');
+                    addStressLog('3. 查看终端日志获取详细错误信息', 'question');
+                }
+            })
+            .finally(() => {
+                console.log('请求完成');
+                stressBtn.disabled = false;
+                stressBtn.classList.remove('loading');
+                stressBtn.textContent = '开始压测';
+            });
+    });
+</script>
+{% endblock %}

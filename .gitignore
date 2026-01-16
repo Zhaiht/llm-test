@@ -25,3 +25,4 @@ ENV/
 .DS_Store
 Thumbs.db
 questions.xlsx
+report.html
