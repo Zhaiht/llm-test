@@ -1,257 +1,350 @@
-{% extends "base.html" %}
-
-{% block title %}问答测试 - LLM 测试工具{% endblock %}
-
-{% block content %}
-<div class="panel">
-    <div class="panel-title">
-        <span style="font-size: 24px;">💬</span>
-        <h2>问答测试配置</h2>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问答测试 - LLM 测试工具</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%231890ff' d='M9.19 6.35c-2.04 2.29-3.44 5.58-3.57 5.89L2 10.69l4.05-4.05c.47-.47 1.15-.68 1.81-.55l1.33 1.26M11.17 17s3.74-1.55 5.89-3.7c5.4-5.4 4.5-9.62 4.21-10.57-.95-.3-5.17-1.19-10.57 4.21C8.55 9.09 7 12.83 7 12.83L11.17 17M17.65 14.81c-2.29 2.04-5.58 3.44-5.89 3.57L13.31 22l4.05-4.05c.47-.47.68-1.15.55-1.81l-1.26-1.33M9 18c0 .83-.34 1.58-.88 2.12C6.94 21.3 2 22 2 22s.7-4.94 1.88-6.12C4.42 15.34 5.17 15 6 15c1.66 0 3 1.34 3 3z'/></svg>" type="image/svg+xml">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f5f7fa; min-height: 100vh; display: flex; }
+        .sidebar { background: white; width: 220px; min-height: 100vh; box-shadow: 2px 0 8px rgba(0,0,0,0.08); border-right: 1px solid #e8e8e8; padding: 0; position: fixed; left: 0; top: 0; z-index: 100; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 24px 20px; border-bottom: 1px solid #e8e8e8; }
+        .sidebar-header h1 { font-size: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700; letter-spacing: -0.5px; }
+        .sidebar-nav { padding: 16px 0; flex: 1; }
+        .nav-item { padding: 14px 20px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: #595959; font-size: 15px; display: flex; align-items: center; gap: 12px; margin: 4px 12px; border-radius: 8px; font-weight: 500; text-decoration: none; }
+        .nav-item span:first-child { font-size: 22px; transition: transform 0.3s; }
+        .nav-item:hover { background: #f5f7fa; color: #667eea; text-decoration: none; }
+        .nav-item:hover span:first-child { transform: scale(1.1); }
+        .nav-item.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3); text-decoration: none; }
+        .main-wrapper { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+        .header { background: white; padding: 24px 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-bottom: 1px solid #e8e8e8; }
+        .header h1 { font-size: 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700; letter-spacing: -0.5px; }
+        .main-container { flex: 1; padding: 32px; }
+        .content-area { display: grid; grid-template-columns: 440px 1fr; gap: 24px; align-items: start; max-width: 1600px; }
+        .panel { background: white; padding: 28px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e8e8e8; transition: transform 0.3s, box-shadow 0.3s; height: fit-content; }
+        .panel.result-panel { height: 100%; display: flex; flex-direction: column; }
+        .panel:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+        .form-group { margin-bottom: 24px; }
+        label { display: block; margin-bottom: 10px; font-weight: 600; color: #262626; font-size: 14px; letter-spacing: 0.3px; }
+        input[type="text"], input[type="number"], textarea { width: 100%; padding: 12px 16px; border: 1px solid #d9d9d9; border-radius: 8px; font-size: 14px; transition: all 0.3s; font-family: inherit; background: white; }
+        input:hover, textarea:hover { border-color: #667eea; }
+        input:focus, textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+        .radio-group { display: flex; gap: 20px; flex-wrap: wrap; }
+        .radio-label { display: flex; align-items: center; cursor: pointer; font-weight: normal; padding: 8px 12px; border-radius: 6px; transition: all 0.3s; }
+        .radio-label:hover { background: #f5f7fa; }
+        .radio-label input[type="radio"] { width: 18px; height: 18px; margin-right: 8px; cursor: pointer; accent-color: #667eea; }
+        .radio-label span { color: #595959; }
+        .radio-label input[type="radio"]:checked + span { color: #667eea; font-weight: 600; }
+        .hint { font-size: 12px; color: #8c8c8c; margin-top: 6px; font-style: italic; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; position: relative; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3); letter-spacing: 0.5px; }
+        button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+        button:active:not(:disabled) { transform: translateY(0); }
+        button:disabled { background: #d9d9d9; cursor: not-allowed; color: #8c8c8c; box-shadow: none; }
+        button.loading::before { content: ''; display: inline-block; width: 16px; height: 16px; margin-right: 8px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 10px; text-align: center; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25); transition: transform 0.3s; }
+        .stat-card:hover { transform: translateY(-4px); }
+        .stat-card.success { background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%); box-shadow: 0 2px 8px rgba(82, 196, 26, 0.25); }
+        .stat-card.failed { background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%); box-shadow: 0 2px 8px rgba(255, 77, 79, 0.25); }
+        .stat-value { font-size: 36px; font-weight: 700; margin-bottom: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-label { font-size: 13px; opacity: 0.95; font-weight: 500; letter-spacing: 0.5px; }
+        .output { flex: 1; overflow-y: auto; padding-right: 8px; min-height: 400px; }
+        .output::-webkit-scrollbar { width: 6px; }
+        .output::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
+        .output::-webkit-scrollbar-thumb { background: rgba(102, 126, 234, 0.3); border-radius: 10px; }
+        .output::-webkit-scrollbar-thumb:hover { background: rgba(102, 126, 234, 0.5); }
+        .log-item { padding: 14px 16px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid; font-size: 13px; line-height: 1.7; animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        .log-start { background: #e6f7ff; border-color: #1890ff; color: #096dd9; }
+        .log-question { background: #fff7e6; border-color: #fa8c16; color: #d46b08; }
+        .log-answer { background: #f6ffed; border-color: #52c41a; color: #389e0d; }
+        .answer-text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: help; max-width: 100%; padding: 4px 0; }
+        .tooltip { position: fixed; background: white; border: 2px solid #52c41a; border-radius: 8px; padding: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); z-index: 10000; white-space: pre-wrap; word-wrap: break-word; color: #262626; font-size: 13px; line-height: 1.7; max-width: 90vw; max-height: 80vh; overflow-y: auto; pointer-events: none; display: none; }
+        .log-error { background: #fff1f0; border-color: #ff4d4f; color: #cf1322; }
+        .log-complete { background: #f9f0ff; border-color: #722ed1; color: #531dab; font-weight: 600; }
+        .empty { text-align: center; padding: 80px 20px; color: #bfbfbf; font-size: 15px; }
+        a { color: #667eea; text-decoration: none; font-weight: 600; transition: all 0.3s; }
+        a:hover { color: #764ba2; text-decoration: underline; }
+        .panel-title { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid rgba(102, 126, 234, 0.1); }
+        .panel-title h2 { margin: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 20px; font-weight: 700; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>🚀 LLM 测试</h1>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/qa" class="nav-item active">
+                <span>💬</span> 问答测试
+            </a>
+            <a href="/stress" class="nav-item">
+                <span>⚡</span> 压力测试
+            </a>
+        </div>
     </div>
-    <form id="testForm">
-        <div class="form-group">
-            <label>API 地址</label>
-            <input type="text" name="api_url" value="http://localhost:1234/v1/chat/completions" required>
-            <div class="hint">LM Studio默认: localhost:1234</div>
-        </div>
-        <div class="form-group">
-            <label>模型名称</label>
-            <input type="text" name="model_name" value="local-model">
-        </div>
-        <div class="row">
-            <div class="form-group">
-                <label>Temperature</label>
-                <input type="number" name="temperature" value="0.7" step="0.1" min="0" max="2" required>
-            </div>
-            <div class="form-group">
-                <label>最大Token数</label>
-                <input type="number" name="max_tokens" value="2000" required>
-            </div>
-        </div>
-        <div class="row">
-            <div class="form-group">
-                <label>超时时间(秒)</label>
-                <input type="number" name="timeout" value="60" required>
-            </div>
-            <div class="form-group">
-                <label>请求间隔(秒)</label>
-                <input type="number" name="sleep_interval" value="1" step="0.1" required>
-            </div>
-        </div>
-        <div class="form-group">
-            <label>提问方式</label>
-            <div class="radio-group">
-                <label class="radio-label">
-                    <input type="radio" name="question_mode" value="file" checked>
-                    <span>从文件读取</span>
-                </label>
-                <label class="radio-label">
-                    <input type="radio" name="question_mode" value="input">
-                    <span>手动输入</span>
-                </label>
-            </div>
-        </div>
-        <div class="form-group" id="fileInputGroup">
-            <label>问题文件路径</label>
-            <input type="text" name="questions_file" value="questions.xlsx">
-        </div>
-        <div class="form-group" id="manualInputGroup" style="display: none;">
-            <label>输入问题（每行一个问题）</label>
-            <textarea name="questions_text" rows="6" placeholder="请输入问题，每行一个问题&#10;例如：&#10;什么是人工智能？&#10;如何学习编程？"></textarea>
-        </div>
-        <button type="submit" id="startBtn">开始测试</button>
-    </form>
-</div>
-
-<div class="panel result-panel">
-    <div class="panel-title">
-        <span style="font-size: 24px;">📊</span>
-        <h2>测试结果</h2>
-    </div>
-    <div id="statsContainer" style="display: none;">
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-value" id="statProgress">0/0</div>
-                <div class="stat-label">进度</div>
-            </div>
-            <div class="stat-card success">
-                <div class="stat-value" id="statSuccess">0</div>
-                <div class="stat-label">成功</div>
-            </div>
-            <div class="stat-card failed">
-                <div class="stat-value" id="statFailed">0</div>
-                <div class="stat-label">失败</div>
-            </div>
-        </div>
-    </div>
-    <div class="output" id="output">
-        <div class="empty">等待开始测试...</div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    const form = document.getElementById('testForm');
-    const output = document.getElementById('output');
-    const startBtn = document.getElementById('startBtn');
-    const statsContainer = document.getElementById('statsContainer');
-    const fileInputGroup = document.getElementById('fileInputGroup');
-    const manualInputGroup = document.getElementById('manualInputGroup');
-    const questionModeRadios = document.querySelectorAll('input[name="question_mode"]');
     
-    let stats = { total: 0, current: 0, success: 0, failed: 0 };
-    let tooltip = null;
+    <div class="main-wrapper">
+        <div class="header">
+            <h1>问答测试</h1>
+        </div>
+        <div class="main-container">
+            <div class="content-area">
+                <div class="panel">
+                    <div class="panel-title">
+                        <span style="font-size: 24px;">💬</span>
+                        <h2>问答测试配置</h2>
+                    </div>
+                    <form id="testForm">
+                        <div class="form-group">
+                            <label>API 地址</label>
+                            <input type="text" name="api_url" value="http://localhost:1234/v1/chat/completions" required>
+                            <div class="hint">LM Studio默认: localhost:1234</div>
+                        </div>
+                        <div class="form-group">
+                            <label>模型名称</label>
+                            <input type="text" name="model_name" value="local-model">
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Temperature</label>
+                                <input type="number" name="temperature" value="0.7" step="0.1" min="0" max="2" required>
+                            </div>
+                            <div class="form-group">
+                                <label>最大Token数</label>
+                                <input type="number" name="max_tokens" value="2000" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label>超时时间(秒)</label>
+                                <input type="number" name="timeout" value="60" required>
+                            </div>
+                            <div class="form-group">
+                                <label>请求间隔(秒)</label>
+                                <input type="number" name="sleep_interval" value="1" step="0.1" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>提问方式</label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="question_mode" value="file" checked>
+                                    <span>从文件读取</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="question_mode" value="input">
+                                    <span>手动输入</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group" id="fileInputGroup">
+                            <label>问题文件路径</label>
+                            <input type="text" name="questions_file" value="data/questions.xlsx">
+                        </div>
+                        <div class="form-group" id="manualInputGroup" style="display: none;">
+                            <label>输入问题（每行一个问题）</label>
+                            <textarea name="questions_text" rows="6" placeholder="请输入问题，每行一个问题&#10;例如：&#10;什么是人工智能？&#10;如何学习编程？"></textarea>
+                        </div>
+                        <button type="submit" id="startBtn">开始测试</button>
+                    </form>
+                </div>
 
-    questionModeRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.value === 'file') {
-                fileInputGroup.style.display = 'block';
-                manualInputGroup.style.display = 'none';
-            } else {
-                fileInputGroup.style.display = 'none';
-                manualInputGroup.style.display = 'block';
-            }
-        });
-    });
+                <div class="panel result-panel">
+                    <div class="panel-title">
+                        <span style="font-size: 24px;">📊</span>
+                        <h2>测试结果</h2>
+                    </div>
+                    <div id="statsContainer" style="display: none;">
+                        <div class="stats">
+                            <div class="stat-card">
+                                <div class="stat-value" id="statProgress">0/0</div>
+                                <div class="stat-label">进度</div>
+                            </div>
+                            <div class="stat-card success">
+                                <div class="stat-value" id="statSuccess">0</div>
+                                <div class="stat-label">成功</div>
+                            </div>
+                            <div class="stat-card failed">
+                                <div class="stat-value" id="statFailed">0</div>
+                                <div class="stat-label">失败</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="output" id="output">
+                        <div class="empty">等待开始测试...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    function createTooltip() {
-        if (!tooltip) {
-            tooltip = document.createElement('div');
-            tooltip.className = 'tooltip';
-            document.body.appendChild(tooltip);
-        }
-        return tooltip;
-    }
-
-    function showTooltip(element, text) {
-        const tip = createTooltip();
-        tip.textContent = text;
-        tip.style.display = 'block';
-        const rect = element.getBoundingClientRect();
-        const tipRect = tip.getBoundingClientRect();
-        let left = rect.left;
-        let top = rect.bottom + 8;
-        if (left + tipRect.width > window.innerWidth - 20) left = window.innerWidth - tipRect.width - 20;
-        if (left < 20) left = 20;
-        if (top + tipRect.height > window.innerHeight - 20) top = rect.top - tipRect.height - 8;
-        if (top < 20) top = 20;
-        tip.style.left = left + 'px';
-        tip.style.top = top + 'px';
-    }
-
-    function hideTooltip() {
-        if (tooltip) tooltip.style.display = 'none';
-    }
-
-    function addLog(message, type) {
-        const div = document.createElement('div');
-        div.className = `log-item log-${type}`;
-        div.innerHTML = message;
-        output.appendChild(div);
-        const answerTexts = div.querySelectorAll('.answer-text');
-        answerTexts.forEach(el => {
-            el.addEventListener('mouseenter', function() {
-                showTooltip(this, this.getAttribute('data-full-text'));
-            });
-            el.addEventListener('mouseleave', hideTooltip);
-        });
-        output.scrollTop = output.scrollHeight;
-    }
-
-    function updateStats() {
-        document.getElementById('statProgress').textContent = `${stats.current}/${stats.total}`;
-        document.getElementById('statSuccess').textContent = stats.success;
-        document.getElementById('statFailed').textContent = stats.failed;
-    }
-
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const questionMode = form.question_mode.value;
-        if (questionMode === 'file' && !form.questions_file.value.trim()) {
-            alert('请输入问题文件路径');
-            return;
-        }
-        if (questionMode === 'input' && !form.questions_text.value.trim()) {
-            alert('请输入至少一个问题');
-            return;
-        }
+    <script>
+        const form = document.getElementById('testForm');
+        const output = document.getElementById('output');
+        const startBtn = document.getElementById('startBtn');
+        const statsContainer = document.getElementById('statsContainer');
+        const fileInputGroup = document.getElementById('fileInputGroup');
+        const manualInputGroup = document.getElementById('manualInputGroup');
+        const questionModeRadios = document.querySelectorAll('input[name="question_mode"]');
         
-        output.innerHTML = '';
-        statsContainer.style.display = 'block';
-        startBtn.disabled = true;
-        startBtn.classList.add('loading');
-        startBtn.textContent = '测试中...';
-        stats = { total: 0, current: 0, success: 0, failed: 0 };
-        
-        const formData = new FormData(form);
-        const params = new URLSearchParams(formData).toString();
-        const eventSource = new EventSource(`/stream?${params}`);
-        
-        eventSource.addEventListener('message', (e) => {
-            const data = JSON.parse(e.data);
-            if (data.type === 'start') {
-                stats.total = data.total;
-                addLog(`开始测试，共 ${data.total} 个问题`, 'start');
-                updateStats();
-            }
-            else if (data.type === 'question') {
-                stats.current = data.index;
-                addLog(`[${data.index}/${data.total}] 提问: ${data.question}`, 'question');
-                updateStats();
-            }
-            else if (data.type === 'answer') {
-                if (data.success) {
-                    stats.success++;
-                    const fullAnswer = data.answer;
-                    const preview = fullAnswer.substring(0, 50);
-                    const needsTruncate = fullAnswer.length > 50;
-                    const answerHtml = needsTruncate 
-                        ? `✓ 回答成功 (${data.latency}s):<br><span class="answer-text" data-full-text="${escapeHtml(fullAnswer)}" title="鼠标悬浮查看完整答案">${escapeHtml(preview)}...</span>`
-                        : `✓ 回答成功 (${data.latency}s):<br>${escapeHtml(fullAnswer)}`;
-                    addLog(answerHtml, 'answer');
+        let stats = { total: 0, current: 0, success: 0, failed: 0 };
+        let tooltip = null;
+
+        questionModeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'file') {
+                    fileInputGroup.style.display = 'block';
+                    manualInputGroup.style.display = 'none';
                 } else {
-                    stats.failed++;
-                    addLog(`✗ 回答失败: ${data.error}`, 'error');
+                    fileInputGroup.style.display = 'none';
+                    manualInputGroup.style.display = 'block';
                 }
-                updateStats();
+            });
+        });
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function createTooltip() {
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                document.body.appendChild(tooltip);
             }
-            else if (data.type === 'skip') {
-                stats.current = data.index;
-                stats.failed++;
-                addLog(`[${data.index}/${data.total}] 跳过空问题`, 'error');
-                updateStats();
+            return tooltip;
+        }
+
+        function showTooltip(element, text) {
+            const tip = createTooltip();
+            tip.textContent = text;
+            tip.style.display = 'block';
+            const rect = element.getBoundingClientRect();
+            const tipRect = tip.getBoundingClientRect();
+            let left = rect.left;
+            let top = rect.bottom + 8;
+            if (left + tipRect.width > window.innerWidth - 20) left = window.innerWidth - tipRect.width - 20;
+            if (left < 20) left = 20;
+            if (top + tipRect.height > window.innerHeight - 20) top = rect.top - tipRect.height - 8;
+            if (top < 20) top = 20;
+            tip.style.left = left + 'px';
+            tip.style.top = top + 'px';
+        }
+
+        function hideTooltip() {
+            if (tooltip) tooltip.style.display = 'none';
+        }
+
+        function addLog(message, type) {
+            const div = document.createElement('div');
+            div.className = `log-item log-${type}`;
+            div.innerHTML = message;
+            output.appendChild(div);
+            const answerTexts = div.querySelectorAll('.answer-text');
+            answerTexts.forEach(el => {
+                el.addEventListener('mouseenter', function() {
+                    showTooltip(this, this.getAttribute('data-full-text'));
+                });
+                el.addEventListener('mouseleave', hideTooltip);
+            });
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function updateStats() {
+            document.getElementById('statProgress').textContent = `${stats.current}/${stats.total}`;
+            document.getElementById('statSuccess').textContent = stats.success;
+            document.getElementById('statFailed').textContent = stats.failed;
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const questionMode = form.question_mode.value;
+            if (questionMode === 'file' && !form.questions_file.value.trim()) {
+                alert('请输入问题文件路径');
+                return;
             }
-            else if (data.type === 'complete') {
-                addLog(`✅ 测试完成！成功 ${data.success_count}/${data.total}`, 'complete');
-                addLog(`<a href="/download/${data.report_path}">📥 点击下载测试报告</a>`, 'complete');
+            if (questionMode === 'input' && !form.questions_text.value.trim()) {
+                alert('请输入至少一个问题');
+                return;
+            }
+            
+            output.innerHTML = '';
+            statsContainer.style.display = 'block';
+            startBtn.disabled = true;
+            startBtn.classList.add('loading');
+            startBtn.textContent = '测试中...';
+            stats = { total: 0, current: 0, success: 0, failed: 0 };
+            
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData).toString();
+            const eventSource = new EventSource(`/stream?${params}`);
+            
+            eventSource.addEventListener('message', (e) => {
+                const data = JSON.parse(e.data);
+                if (data.type === 'start') {
+                    stats.total = data.total;
+                    addLog(`开始测试，共 ${data.total} 个问题`, 'start');
+                    updateStats();
+                }
+                else if (data.type === 'question') {
+                    stats.current = data.index;
+                    addLog(`[${data.index}/${data.total}] 提问: ${data.question}`, 'question');
+                    updateStats();
+                }
+                else if (data.type === 'answer') {
+                    if (data.success) {
+                        stats.success++;
+                        const fullAnswer = data.answer;
+                        const preview = fullAnswer.substring(0, 50);
+                        const needsTruncate = fullAnswer.length > 50;
+                        const answerHtml = needsTruncate 
+                            ? `✓ 回答成功 (${data.latency}s):<br><span class="answer-text" data-full-text="${escapeHtml(fullAnswer)}" title="鼠标悬浮查看完整答案">${escapeHtml(preview)}...</span>`
+                            : `✓ 回答成功 (${data.latency}s):<br>${escapeHtml(fullAnswer)}`;
+                        addLog(answerHtml, 'answer');
+                    } else {
+                        stats.failed++;
+                        addLog(`✗ 回答失败: ${data.error}`, 'error');
+                    }
+                    updateStats();
+                }
+                else if (data.type === 'skip') {
+                    stats.current = data.index;
+                    stats.failed++;
+                    addLog(`[${data.index}/${data.total}] 跳过空问题`, 'error');
+                    updateStats();
+                }
+                else if (data.type === 'complete') {
+                    addLog(`✅ 测试完成！成功 ${data.success_count}/${data.total}`, 'complete');
+                    addLog(`<a href="/download/${data.report_path}">📥 点击下载测试报告</a>`, 'complete');
+                    startBtn.disabled = false;
+                    startBtn.classList.remove('loading');
+                    startBtn.textContent = '开始测试';
+                    eventSource.close();
+                }
+                else if (data.type === 'error') {
+                    addLog(`❌ 错误: ${data.message}`, 'error');
+                    startBtn.disabled = false;
+                    startBtn.classList.remove('loading');
+                    startBtn.textContent = '开始测试';
+                    eventSource.close();
+                }
+            });
+            
+            eventSource.addEventListener('error', () => {
+                addLog('❌ 连接中断', 'error');
                 startBtn.disabled = false;
                 startBtn.classList.remove('loading');
                 startBtn.textContent = '开始测试';
                 eventSource.close();
-            }
-            else if (data.type === 'error') {
-                addLog(`❌ 错误: ${data.message}`, 'error');
-                startBtn.disabled = false;
-                startBtn.classList.remove('loading');
-                startBtn.textContent = '开始测试';
-                eventSource.close();
-            }
+            });
         });
-        
-        eventSource.addEventListener('error', () => {
-            addLog('❌ 连接中断', 'error');
-            startBtn.disabled = false;
-            startBtn.classList.remove('loading');
-            startBtn.textContent = '开始测试';
-            eventSource.close();
-        });
-    });
-</script>
-{% endblock %}
+    </script>
+</body>
+</html>

@@ -1,8 +1,17 @@
+"""
+LLM测试工具 - 主启动文件
+使用新的项目结构
+"""
+import sys
+import os
+
+# 确保可以导入src目录下的模块
+sys.path.insert(0, os.path.dirname(__file__))
+
 from flask import Flask, render_template, request, send_file, Response, jsonify
-from questions import run_test_stream
+from src.llm_test.services.qa_service import run_test_stream
 import json
 import logging
-import sys
 
 # 配置日志
 logging.basicConfig(
@@ -18,6 +27,12 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
+    """重定向到问答测试页面"""
+    from flask import redirect
+    return redirect('/qa')
+
+@app.route('/qa')
+def qa_test():
     try:
         return render_template('qa_test.html', active_page='qa')
     except Exception as e:
@@ -35,7 +50,6 @@ def stress():
 @app.route('/test_locust')
 def test_locust():
     """测试Locust是否可用"""
-    import sys
     import subprocess
     
     result = {
@@ -52,7 +66,6 @@ def test_locust():
         result['locust_installed'] = False
         result['locust_error'] = str(e)
         
-        # 检查是否是zope.event问题
         if 'zope.event' in str(e):
             result['fix_command'] = 'pip install zope.event'
             result['message'] = '缺少zope.event依赖，请运行: pip install zope.event'
@@ -68,7 +81,6 @@ def test_locust():
         result['locust_command'] = True
         result['locust_command_output'] = cmd_result.stdout + cmd_result.stderr
         
-        # 检查命令输出中是否有错误
         if 'zope.event' in result['locust_command_output']:
             result['fix_command'] = 'pip install zope.event'
             result['message'] = '缺少zope.event依赖，请运行: pip install zope.event'
@@ -126,17 +138,6 @@ def stress_test():
     logger.info("收到压力测试请求")
     logger.info(f"请求参数: {request.args.to_dict()}")
     
-    # 首先检查Locust是否可用
-    try:
-        import locust
-        logger.info(f"Locust版本: {locust.__version__}")
-    except ImportError as e:
-        logger.error(f"Locust导入失败: {e}")
-        return jsonify({
-            'status': 'error',
-            'message': f'Locust未正确安装。请在Anaconda环境中运行: python -m pip install locust'
-        }), 500
-    
     try:
         config = request.args.to_dict()
         target_url = config.get('target_url', 'http://localhost:1234')
@@ -151,8 +152,6 @@ def stress_test():
         
         import subprocess
         import tempfile
-        import os
-        import sys
         
         # 生成locust配置文件
         locust_script = f'''from locust import HttpUser, task, between
@@ -209,7 +208,7 @@ class StressTestUser(HttpUser):
         logger.info(f"Python可执行文件: {sys.executable}")
         
         try:
-            # 使用python -m locust 而不是直接调用locust命令
+            # 使用python -m locust，在新进程中运行避免monkey patch警告
             cmd = [
                 sys.executable,
                 '-m', 'locust',
@@ -219,13 +218,13 @@ class StressTestUser(HttpUser):
                 '-r', str(spawn_rate),
                 '-t', f'{duration}s',
                 '--html', 'reports/locust_report.html',
-                '--csv', 'reports/locust_stats'
+                '--csv', 'reports/locust_stats',
+                '--loglevel', 'WARNING'
             ]
             
             logger.info(f"准备执行命令: {' '.join(cmd)}")
             logger.info("开始执行Locust...")
             
-            # 使用shell=False，在Windows上更可靠
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -233,36 +232,46 @@ class StressTestUser(HttpUser):
                 timeout=duration + 60,
                 encoding='utf-8',
                 errors='replace',
-                cwd=os.getcwd()
+                cwd=os.getcwd(),
+                env=os.environ.copy()
             )
             
             logger.info(f"Locust执行完成，返回码: {result.returncode}")
             
-            # 记录输出
+            # 记录输出（过滤警告）
             if result.stdout:
-                logger.info(f"Locust stdout:\n{result.stdout}")
+                stdout_lines = [line for line in result.stdout.split('\n') 
+                               if 'MonkeyPatchWarning' not in line and 'monkey.patch_all' not in line]
+                if stdout_lines:
+                    logger.info(f"Locust stdout:\n{chr(10).join(stdout_lines)}")
+            
             if result.stderr:
-                logger.warning(f"Locust stderr:\n{result.stderr}")
+                stderr_lines = [line for line in result.stderr.split('\n') 
+                               if 'MonkeyPatchWarning' not in line and 'monkey.patch_all' not in line]
+                if stderr_lines:
+                    logger.warning(f"Locust stderr:\n{chr(10).join(stderr_lines)}")
             
             if result.returncode != 0:
                 error_msg = result.stderr or result.stdout or "未知错误"
-                logger.error(f"Locust执行失败")
-                
-                # 检查是否是依赖问题
-                if 'ModuleNotFoundError' in error_msg or 'No module named' in error_msg:
+                if 'MonkeyPatchWarning' in error_msg and result.returncode == 0:
+                    logger.info("忽略monkey patch警告，继续处理结果")
+                else:
+                    logger.error(f"Locust执行失败")
+                    
+                    if 'ModuleNotFoundError' in error_msg or 'No module named' in error_msg:
+                        return jsonify({
+                            'status': 'error',
+                            'message': 'Locust依赖包缺失，请运行: pip install locust zope.event'
+                        }), 500
+                    
                     return jsonify({
                         'status': 'error',
-                        'message': 'Locust依赖包缺失，请运行: pip install locust zope.event'
+                        'message': f'压测执行失败: {error_msg[:500]}'
                     }), 500
-                
-                return jsonify({
-                    'status': 'error',
-                    'message': f'压测执行失败: {error_msg[:500]}'
-                }), 500
             
             logger.info("开始解析结果...")
             
-            # 尝试从CSV文件读取统计数据
+            # 从CSV文件读取统计数据
             import csv
             stats_file = 'reports/locust_stats_stats.csv'
             total_requests = 0
@@ -277,10 +286,10 @@ class StressTestUser(HttpUser):
                         reader = csv.DictReader(csvfile)
                         for row in reader:
                             if row.get('Type') == 'Aggregated' or row.get('Name') == 'Aggregated':
-                                total_requests = int(row.get('Request Count', 0) or row.get('# requests', 0))
-                                failed_count = int(row.get('Failure Count', 0) or row.get('# failures', 0))
+                                total_requests = int(row.get('Request Count', 0) or row.get('# requests', 0) or 0)
+                                failed_count = int(row.get('Failure Count', 0) or row.get('# failures', 0) or 0)
                                 success_count = total_requests - failed_count
-                                avg_response_time = float(row.get('Average Response Time', 0) or row.get('Average response time', 0))
+                                avg_response_time = float(row.get('Average Response Time', 0) or row.get('Average response time', 0) or 0)
                                 break
                     logger.info(f"从CSV读取: 总请求={total_requests}, 成功={success_count}, 失败={failed_count}")
                 except Exception as e:
@@ -288,11 +297,9 @@ class StressTestUser(HttpUser):
             else:
                 logger.warning(f"CSV文件不存在: {stats_file}")
             
-            # 如果没有CSV数据，尝试从输出解析
+            # 如果没有CSV数据，使用估算值
             if total_requests == 0:
-                output = result.stdout
-                # 简单估算
-                total_requests = users * (duration // 2)  # 保守估计
+                total_requests = users * (duration // 2)
                 success_count = total_requests
                 failed_count = 0
                 avg_response_time = 100
@@ -344,5 +351,11 @@ def download_file(filename):
         return str(e), 404
 
 if __name__ == '__main__':
-    logger.info("启动Flask应用，端口: 5000")
+    logger.info("=" * 60)
+    logger.info("LLM 测试工具 v1.0.0")
+    logger.info("=" * 60)
+    logger.info("访问地址: http://localhost:5000")
+    logger.info("问答测试: http://localhost:5000/")
+    logger.info("压力测试: http://localhost:5000/stress")
+    logger.info("=" * 60)
     app.run(debug=True, port=5000)
