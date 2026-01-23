@@ -5,81 +5,53 @@
 ```
 llm-test/
 │
+├── main.py                       # 主启动文件
+│
 ├── src/                          # 源代码目录
 │   └── llm_test/                # 主包
-│       ├── __init__.py          # 包初始化，定义版本号
-│       ├── app.py               # Flask应用主文件
-│       │
-│       ├── routes/              # 路由模块（MVC中的Controller）
-│       │   ├── __init__.py
-│       │   ├── qa_routes.py     # 问答测试路由
-│       │   └── stress_routes.py # 压力测试路由
-│       │
-│       ├── services/            # 业务逻辑层（MVC中的Model）
-│       │   ├── __init__.py
-│       │   ├── qa_service.py    # 问答测试服务
-│       │   └── stress_service.py# 压力测试服务
-│       │
+│       ├── __init__.py          # 包初始化
+│       ├── services/            # 业务逻辑层
+│       │   └── qa_service.py    # 问答测试服务
 │       └── utils/               # 工具函数
 │           ├── __init__.py
 │           └── logger.py        # 日志配置
 │
-├── templates/                    # HTML模板（MVC中的View）
+├── templates/                    # HTML模板
 │   ├── base.html                # 基础模板
 │   ├── qa_test.html             # 问答测试页面
-│   └── stress_test.html         # 压力测试页面
-│
-├── static/                       # 静态资源
-│   ├── css/                     # 样式文件
-│   ├── js/                      # JavaScript文件
-│   └── images/                  # 图片资源
+│   ├── stress_test.html         # 压力测试页面
+│   ├── result.html              # 结果页面
+│   └── error.html               # 错误页面
 │
 ├── data/                         # 数据文件
-│   ├── questions.xlsx           # 问题文件示例
-│   └── config.yaml              # 配置文件
+│   ├── config.yaml              # 配置文件
 │
 ├── docs/                         # 文档
 │   ├── README.md                # 主文档
 │   ├── INSTALL.md               # 安装说明
-│   ├── API.md                   # API文档
-│   └── LOCUST_README.md         # Locust使用说明
+│   ├── LOCUST_README.md         # Locust使用说明
+│   ├── MIGRATION_GUIDE.md       # 迁移指南
+│   ├── PROJECT_STRUCTURE.md     # 项目结构说明
+│   └── SUMMARY.md               # 文档摘要
+│
+├── examples/                     # 示例代码
+│   └── locustfile.py            # Locust脚本示例
 │
 ├── scripts/                      # 工具脚本
 │   ├── check_env.py             # 环境检查
-│   ├── test_locust.py           # Locust测试
-│   ├── reorganize.py            # 项目重组
 │   ├── fix_anaconda_env.bat     # 环境修复（Windows）
-│   └── fix_locust.sh            # 环境修复（Linux/Mac）
-│
-├── tests/                        # 测试用例
-│   ├── __init__.py
-│   ├── test_qa_service.py       # 问答服务测试
-│   ├── test_stress_service.py   # 压力测试服务测试
-│   └── test_routes.py           # 路由测试
-│
-├── examples/                     # 示例代码
-│   ├── locustfile.py            # Locust脚本示例
-│   └── sample_questions.xlsx    # 示例问题文件
-│
-├── reports/                      # 测试报告输出
-│   └── .gitkeep                 # 保持目录
-│
-├── .git/                         # Git版本控制
-├── .gitignore                    # Git忽略文件
-├── .vscode/                      # VSCode配置
+│   ├── fix_locust.bat           # 环境修复（Windows）
+│   ├── fix_locust.sh            # 环境修复（Linux/Mac）
+│   ├── reorganize.py            # 项目重组
+│   └── test_locust.py           # Locust测试
 │
 ├── requirements.txt              # Python依赖列表
 ├── setup.py                      # 安装配置
 ├── MANIFEST.in                   # 打包配置
-├── pytest.ini                    # pytest配置
-├── .flake8                       # flake8配置
-│
-├── README.md                     # 项目说明
-├── LICENSE                       # 许可证
+├── .gitignore                    # Git忽略文件
 ├── CHANGELOG.md                  # 更新日志
-│
-├── app.py                        # 旧版启动文件（兼容）
-└── run.py                        # 新版启动文件
+├── COMPLETION_SUMMARY.md         # 完成摘要
+└── LICENSE                       # 许可证
 
 ```
 
@@ -88,16 +60,11 @@ llm-test/
 ### src/llm_test/
 主要源代码包，包含所有业务逻辑。
 
-- **app.py**: Flask应用工厂，创建和配置应用
-- **routes/**: 处理HTTP请求，调用服务层
 - **services/**: 核心业务逻辑，与外部API交互
 - **utils/**: 通用工具函数，如日志、配置等
 
 ### templates/
 Jinja2模板文件，负责页面渲染。
-
-### static/
-静态资源文件，如CSS、JavaScript、图片等。
 
 ### data/
 数据文件和配置文件。
@@ -108,27 +75,24 @@ Jinja2模板文件，负责页面渲染。
 ### scripts/
 辅助脚本，用于开发、测试、部署等。
 
-### tests/
-单元测试和集成测试。
-
 ### examples/
 示例代码和配置文件。
 
-### reports/
-测试报告输出目录。
+### main.py
+主启动文件，负责创建和配置Flask应用，处理HTTP请求。
 
 ## 设计模式
 
 ### MVC架构
 - **Model**: services/ - 业务逻辑和数据处理
 - **View**: templates/ - 页面展示
-- **Controller**: routes/ - 请求处理和路由
+- **Controller**: main.py - 请求处理和路由
 
 ### 分层架构
 ```
 Presentation Layer (templates/)
         ↓
-Controller Layer (routes/)
+Controller Layer (main.py)
         ↓
 Service Layer (services/)
         ↓

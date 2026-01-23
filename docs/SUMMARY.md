@@ -1,214 +1,107 @@
-# 项目重组总结
+# 项目文档整理总结
 
 ## 已完成的工作
 
-### 1. 创建标准目录结构 ✅
+### 1. 文档结构整理 ✅
 
 ```
 llm-test/
+├── docs/                  # 文档目录
+│   ├── README.md         # 主文档
+│   ├── INSTALL.md        # 安装说明
+│   ├── LOCUST_README.md  # Locust使用说明
+│   ├── MIGRATION_GUIDE.md # 迁移指南
+│   ├── PROJECT_STRUCTURE.md # 项目结构说明
+│   └── SUMMARY.md        # 文档摘要
 ├── src/llm_test/          # 源代码包
 ├── templates/             # HTML模板
-├── static/                # 静态资源
 ├── data/                  # 数据文件
-├── docs/                  # 文档
-├── scripts/               # 脚本
-├── tests/                 # 测试
 ├── examples/              # 示例
-└── reports/               # 报告
+├── scripts/               # 脚本
+└── main.py                # 主启动文件
 ```
 
-### 2. 创建核心文件 ✅
+### 2. 文档内容更新 ✅
 
-- `src/llm_test/__init__.py` - 包初始化
-- `src/llm_test/app.py` - Flask应用
-- `src/llm_test/utils/logger.py` - 日志配置
-- `setup.py` - 安装配置
-- `MANIFEST.in` - 打包配置
-- `run.py` - 启动脚本
+- **README.md** - 主文档，包含项目概述、功能特性、快速开始等
+- **INSTALL.md** - 安装说明，包含详细的安装步骤和环境配置
+- **PROJECT_STRUCTURE.md** - 项目结构说明，与实际结构一致
+- **MIGRATION_GUIDE.md** - 迁移指南，反映项目已完成迁移
+- **SUMMARY.md** - 文档整理总结
 
-### 3. 创建文档 ✅
+### 3. 重复文档清理 ✅
 
-- `PROJECT_STRUCTURE.md` - 项目结构详解
-- `RESTRUCTURE.md` - 重构说明
-- `MIGRATION_GUIDE.md` - 迁移指南
-- `README_NEW.md` - 新版README
-- `SUMMARY.md` - 本文档
-
-### 4. 创建工具脚本 ✅
-
-- `scripts/reorganize.py` - 自动重组脚本
+- 删除根目录重复的README.md
+- 删除根目录重复的INSTALL.md
+- 删除根目录重复的QUICK_START.md
 
 ## 当前状态
 
-### 可用的运行方式
+### 文档结构
 
-**方式1：使用旧结构（当前）**
+✅ **文档已集中管理**：所有文档统一存放在 `docs/` 目录中
+✅ **文档内容一致**：所有文档内容与实际项目结构保持一致
+✅ **文档层次清晰**：从安装到使用的完整文档体系
+
+### 运行方式
+
 ```bash
-python app.py
-```
-✅ 立即可用，无需修改
+# 直接运行
+python main.py
 
-**方式2：使用新结构**
-```bash
-python run.py
-```
-✅ 兼容新旧结构
-
-**方式3：使用重组后的结构**
-```bash
-python scripts/reorganize.py  # 先重组
-python run.py                  # 再运行
+# 或安装后运行
+pip install -e .
+llm-test
 ```
 
-## 下一步操作
+## 文档使用指南
 
-### 立即可做（可选）
+### 新手入门
 
-1. **查看新结构**
-   ```bash
-   cat PROJECT_STRUCTURE.md
-   ```
+1. **阅读 `docs/README.md`** - 了解项目概述和功能特性
+2. **阅读 `docs/INSTALL.md`** - 按照安装步骤配置环境
+3. **运行应用** - `python main.py`
 
-2. **测试重组脚本**
-   ```bash
-   python scripts/reorganize.py
-   ```
+### 高级用户
 
-3. **测试新启动方式**
-   ```bash
-   python run.py
-   ```
+1. **阅读 `docs/PROJECT_STRUCTURE.md`** - 了解项目结构
+2. **阅读 `docs/LOCUST_README.md`** - 了解压力测试
+3. **查看 `examples/`** - 查看示例代码
 
-### 建议的迁移流程
+## 优势
 
-#### 阶段1：准备（5分钟）
-- [ ] 阅读 `MIGRATION_GUIDE.md`
-- [ ] 创建项目备份
-- [ ] 测试当前功能
+### 文档集中管理
 
-#### 阶段2：重组（2分钟）
-- [ ] 运行 `python scripts/reorganize.py`
-- [ ] 检查新目录结构
+- ✅ 所有文档统一存放，易于查找
+- ✅ 文档内容保持一致，避免混乱
+- ✅ 文档层次清晰，便于使用
 
-#### 阶段3：测试（10分钟）
-- [ ] 运行 `python run.py`
-- [ ] 测试问答功能
-- [ ] 测试压力测试功能
-- [ ] 检查报告生成
+### 项目结构规范
 
-#### 阶段4：清理（可选）
-- [ ] 确认功能正常
-- [ ] 删除旧文件
-- [ ] 更新 README.md
-- [ ] 提交到Git
-
-## 优势对比
-
-### 旧结构
-```
-llm-test/
-├── app.py
-├── questions.py
-├── templates/
-├── questions.xlsx
-└── ...（文件混杂）
-```
-
-**问题：**
-- ❌ 文件混乱，难以维护
-- ❌ 不符合Python标准
-- ❌ 难以扩展
-- ❌ 不便于测试
-
-### 新结构
-```
-llm-test/
-├── src/llm_test/      # 清晰的代码组织
-├── data/              # 数据文件分离
-├── docs/              # 文档集中管理
-├── scripts/           # 脚本独立存放
-└── tests/             # 测试用例规范
-```
-
-**优势：**
 - ✅ 符合Python PEP规范
 - ✅ 模块化，易于维护
 - ✅ 便于扩展新功能
-- ✅ 支持单元测试
-- ✅ 可以pip安装
-- ✅ 适合团队协作
-
-## 兼容性
-
-### 向后兼容 ✅
-- 旧的 `app.py` 仍然可用
-- `run.py` 自动检测可用结构
-- 所有功能保持不变
-
-### 无需立即迁移 ✅
-- 当前结构完全可用
-- 可以随时迁移
-- 迁移过程可逆
-
-## 文件清单
-
-### 新增文件
-```
-✅ src/llm_test/__init__.py
-✅ src/llm_test/app.py
-✅ src/llm_test/utils/__init__.py
-✅ src/llm_test/utils/logger.py
-✅ setup.py
-✅ MANIFEST.in
-✅ run.py
-✅ scripts/reorganize.py
-✅ PROJECT_STRUCTURE.md
-✅ RESTRUCTURE.md
-✅ MIGRATION_GUIDE.md
-✅ README_NEW.md
-✅ SUMMARY.md
-```
-
-### 保留文件
-```
-✅ app.py (兼容)
-✅ questions.py
-✅ templates/
-✅ requirements.txt
-✅ .gitignore
-✅ LICENSE
-```
 
 ## 快速命令
 
 ```bash
-# 查看项目结构
-cat PROJECT_STRUCTURE.md
-
-# 查看迁移指南
-cat MIGRATION_GUIDE.md
-
-# 重组项目
-python scripts/reorganize.py
-
-# 运行应用（新方式）
-python run.py
-
-# 运行应用（旧方式）
-python app.py
+# 运行应用
+python main.py
 
 # 安装为包
 pip install -e .
 
-# 运行测试
-pytest tests/
+# 运行压力测试
+python -m locust -f examples/locustfile.py
+
+# 查看文档
+ls docs/
 ```
 
 ## 总结
 
-✅ **已完成**：标准Python项目结构设计和文档
-✅ **当前状态**：旧结构仍可用，新结构已就绪
-✅ **下一步**：可选择性迁移，无强制要求
-✅ **兼容性**：完全向后兼容
+✅ **已完成**：项目文档的整理和集中管理
+✅ **当前状态**：文档结构清晰，内容一致
+✅ **下一步**：根据项目发展持续更新文档
 
-**建议**：先熟悉新结构，测试无误后再逐步迁移。
+**建议**：定期查看 `docs/` 目录下的文档，获取最新的项目信息。

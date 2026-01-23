@@ -1,16 +1,76 @@
 # LLM 测试工具
 
-一个基于 Flask 的 Web 应用，用于批量测试 LLM 模型的响应质量和性能。
+一个用于测试大语言模型（LLM）问答能力和性能的综合工具。
 
 ## 功能特性
 
-- 🎨 现代化 Web 界面，左右分栏布局
-- 📊 实时显示测试进度和统计数据
-- 🔄 支持流式输出，实时查看测试日志
-- 📈 自动生成 Excel 测试报告
-- 🎯 计算模型回答与参考答案的相似度
-- 📝 完整的日志记录和错误追踪
-- 🚀 支持 LM Studio、Ollama 等本地 LLM 服务
+- ✅ **问答测试**：批量测试LLM的问答能力
+  - 支持从Excel文件读取问题
+  - 支持手动输入问题
+  - 实时显示测试进度
+  - 自动生成测试报告
+  - 计算答案相似度
+
+- ⚡ **压力测试**：测试LLM服务的性能
+  - 支持多种接口测试
+  - 可配置并发用户数
+  - 实时显示RPS和响应时间
+  - 生成详细的HTML报告
+
+- 🎨 **现代化 Web 界面**
+  - 左右分栏布局
+  - 实时显示测试进度和统计数据
+  - 支持流式输出，实时查看测试日志
+
+- 📈 **测试报告**
+  - 自动生成 Excel 测试报告
+  - 详细的测试汇总（成功率、平均延迟、拒答数等）
+
+- � **广泛的兼容性**
+  - 支持 LM Studio、Ollama 等本地 LLM 服务
+  - 支持任何兼容 OpenAI API 格式的服务
+
+## 项目结构
+
+```
+llm-test/
+├── main.py                # 主启动文件
+├── src/                   # 源代码
+│   └── llm_test/
+│       ├── __init__.py
+│       ├── services/      # 业务逻辑
+│       │   └── qa_service.py     # 问答测试服务
+│       └── utils/         # 工具函数
+│           ├── __init__.py
+│           └── logger.py         # 日志配置
+├── templates/             # HTML模板
+│   ├── base.html         # 基础模板
+│   ├── qa_test.html      # 问答测试页面
+│   ├── stress_test.html  # 压力测试页面
+│   ├── result.html       # 结果页面
+│   └── error.html        # 错误页面
+├── data/                  # 数据文件
+│   ├── questions.xlsx    # 问题文件示例
+│   └── config.yaml       # 配置文件
+├── docs/                  # 文档
+│   ├── README.md         # 主文档
+│   ├── INSTALL.md        # 安装说明
+│   ├── LOCUST_README.md  # Locust使用说明
+│   ├── MIGRATION_GUIDE.md # 迁移指南
+│   ├── PROJECT_STRUCTURE.md # 项目结构说明
+│   └── SUMMARY.md        # 文档摘要
+├── examples/              # 示例代码
+│   └── locustfile.py     # Locust脚本示例
+├── scripts/               # 脚本
+│   ├── check_env.py      # 环境检查
+│   ├── test_locust.py    # Locust测试
+│   └── fix_*.bat/sh      # 修复脚本
+├── requirements.txt       # Python依赖
+├── setup.py              # 安装配置
+├── MANIFEST.in           # 打包配置
+├── .gitignore            # Git忽略文件
+└── LICENSE               # 许可证
+```
 
 ## 快速开始
 
@@ -20,89 +80,85 @@
 pip install -r requirements.txt
 ```
 
-### 2. 准备问题文件
-
-创建 Excel 文件（如 `questions.xlsx`），包含以下列：
-- `问题`：测试问题（必需）
-- `答案`：参考答案（可选，用于相似度计算）
-
-### 3. 启动应用
+### 2. 运行应用
 
 ```bash
-python app.py
+# 直接运行（推荐）
+python main.py
+
+# 或安装后运行
+pip install -e .
+llm-test
 ```
 
-### 4. 访问界面
+### 3. 访问应用
 
 打开浏览器访问：http://localhost:5000
 
-### 5. 配置并测试
+## 使用说明
 
-在 Web 界面填写配置：
-- **API 地址**：LM Studio 默认 `http://localhost:1234/v1/chat/completions`
-- **模型名称**：模型标识（LM Studio 可留空）
-- **Temperature**：控制输出随机性（0-2）
-- **最大 Token 数**：单次回答的最大长度
-- **超时时间**：API 请求超时时间（秒）
-- **请求间隔**：每次请求之间的等待时间（秒）
-- **问题文件路径**：Excel 文件路径
+### 问答测试
 
-点击"开始测试"，右侧实时显示测试进度和结果。
+1. 选择"问答测试"标签
+2. 配置API参数（地址、模型、温度等）
+3. 选择提问方式：
+   - 从文件读取：使用Excel文件
+   - 手动输入：直接输入问题
+4. 点击"开始测试"
+5. 查看实时结果和下载报告
 
-## 测试报告
+### 压力测试
 
-测试完成后会生成两个文件：
+1. 选择"压力测试"标签
+2. 配置压测参数：
+   - 目标API地址
+   - 测试接口类型
+   - 并发用户数
+   - 运行时长
+3. 点击"开始压测"
+4. 查看实时统计和下载报告
 
-1. **原问题文件**：添加"回答"和"相似度"列
-2. **测试报告**：保存在 `reports/` 目录，包含：
-   - 测试结果详情（问题、回答、延迟、状态）
-   - 测试汇总（成功率、平均延迟、拒答数等）
+## 开发指南
 
-## 项目结构
+### 添加新功能
 
+1. 在 `src/llm_test/services/` 添加业务逻辑
+2. 在 `main.py` 添加路由
+3. 在 `templates/` 添加页面模板
+
+### 运行测试
+
+```bash
+pytest tests/
 ```
-llm-test/
-├── app.py                      # Flask 应用主文件
-├── questions.py                # 测试逻辑和报告生成
-├── requirements.txt            # Python 依赖
-├── templates/
-│   ├── config_form.html       # 主界面（配置表单+实时日志）
-│   ├── result.html            # 结果页面
-│   └── error.html             # 错误页面
-├── reports/                    # 测试报告目录（自动生成）
-└── .gitignore                 # Git 忽略配置
+
+### 代码规范
+
+```bash
+# 格式化代码
+black src/
+
+# 检查代码
+flake8 src/
+pylint src/
 ```
 
-## 技术栈
+## 依赖说明
 
-- **后端**：Flask + Python 3.x
-- **前端**：原生 HTML/CSS/JavaScript
-- **数据处理**：pandas、openpyxl
-- **实时通信**：Server-Sent Events (SSE)
-- **日志**：Python logging 模块
+- **Flask**: Web框架
+- **requests**: HTTP请求
+- **pandas**: 数据处理
+- **openpyxl**: Excel文件处理
+- **locust**: 压力测试（可选）
 
-## 兼容性
+## 常见问题
 
-支持以下 LLM 服务：
-- LM Studio（推荐）
-- Ollama
-- 任何兼容 OpenAI API 格式的服务
-
-## 注意事项
-
-- 确保 LLM 服务已启动并可访问
-- Excel 文件必须包含"问题"列
-- 测试过程中请勿关闭浏览器
-- 大量问题测试时注意 API 限流
+查看 [INSTALL.md](INSTALL.md) 获取详细的安装和故障排除指南。
 
 ## 许可证
 
-本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
+MIT License
 
-这意味着您可以自由地：
-- ✅ 使用本软件用于商业或非商业目的
-- ✅ 修改源代码
-- ✅ 分发原始或修改后的版本
-- ✅ 私有使用
+## 贡献
 
-唯一的要求是在所有副本中包含原始许可证和版权声明。
+欢迎提交Issue和Pull Request！

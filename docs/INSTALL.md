@@ -47,8 +47,17 @@ pip install locust
 
 ## 运行应用
 
+### 直接运行（推荐）
+
 ```bash
-python app.py
+python main.py
+```
+
+### 或安装后运行
+
+```bash
+pip install -e .
+llm-test
 ```
 
 然后在浏览器访问：http://localhost:5000
@@ -90,21 +99,7 @@ A: 确保 questions.xlsx 文件在项目根目录，或修改文件路径
 ### Q: API连接失败
 A: 检查LM Studio或其他LLM服务是否已启动，默认地址为 http://localhost:1234
 
-## 目录结构
 
-```
-.
-├── app.py                  # Flask应用主文件
-├── questions.py            # 问答测试逻辑
-├── locustfile.py          # Locust压测脚本示例
-├── requirements.txt        # Python依赖
-├── questions.xlsx         # 问题文件示例
-├── templates/             # HTML模板
-│   ├── base.html         # 基础模板
-│   ├── qa_test.html      # 问答测试页面
-│   └── stress_test.html  # 压力测试页面
-└── reports/              # 测试报告目录（自动创建）
-```
 
 ## 技术栈
 
