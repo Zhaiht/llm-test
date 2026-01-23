@@ -681,7 +681,11 @@
                         addStressLog(`成功: ${data.success_count}, 失败: ${data.failed_count}`, 'answer');
                         addStressLog(`平均RPS: ${data.avg_rps}`, 'answer');
                         addStressLog(`平均响应时间: ${data.avg_response_time}ms`, 'answer');
-                        addStressLog(`📄 详细报告已生成: reports/locust_report.html`, 'complete');
+                        const reportLink = document.createElement('div');
+                        reportLink.className = 'log-item log-complete';
+                        reportLink.innerHTML = `📄 详细报告已生成: <a href="/report/reports/locust_report.html" target="_blank">reports/locust_report.html</a>`;
+                        stressOutput.appendChild(reportLink);
+                        stressOutput.scrollTop = stressOutput.scrollHeight;
                         document.getElementById('stressRPS').textContent = data.avg_rps;
                         document.getElementById('stressSuccess').textContent = data.success_count;
                         document.getElementById('stressFailed').textContent = data.failed_count;

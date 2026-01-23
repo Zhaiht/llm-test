@@ -350,6 +350,15 @@ def download_file(filename):
         logger.error(f"下载文件失败: {e}", exc_info=True)
         return str(e), 404
 
+@app.route('/report/<path:filename>')
+def view_report(filename):
+    try:
+        logger.info(f"查看报告: {filename}")
+        return send_file(filename)
+    except Exception as e:
+        logger.error(f"查看报告失败: {e}", exc_info=True)
+        return str(e), 404
+
 if __name__ == '__main__':
     logger.info("=" * 60)
     logger.info("LLM 测试工具 v1.0.0")

@@ -36,3 +36,4 @@ Thumbs.db
 *.log
 .pytest_cache/
 data/questions.xlsx
+data/questions.xlsx
