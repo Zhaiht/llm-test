@@ -3,7 +3,7 @@ import os
 import time
 from datetime import datetime, timedelta
 
-def clean_reports(days_old=1, reports_dir='reports'):
+def clean_reports(days_old=7, reports_dir='reports'):
     """清理指定天数之前的报告文件"""
     if not os.path.exists(reports_dir):
         print(f"目录 {reports_dir} 不存在")
